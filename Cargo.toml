@@ -3,6 +3,7 @@ name = "uki-rs"
 version = "0.1.0"
 edition = "2024"
 description = "Run a Rust application from a single UKI."
+license = "MIT"
 repository = "https://github.com/yeetypete/uki-rs"
 publish = false
 
