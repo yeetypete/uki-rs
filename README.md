@@ -42,11 +42,12 @@ uki-rs.efi
 ## Development
 
 ```sh
-nix build        # build the UKI with the Rust application
-nix run .#vm     # boot it in a VM (Ctrl-a x to quit)
-nix flake check  # build, lint and run the VM test
-nix develop      # Rust toolchain
-nix fmt          # format
+nix build          # build the UKI with the Rust application
+nix run .#vm       # boot it in a VM (Ctrl-a x to quit)
+nix run .#inspect  # list the UKI's sections and initrd contents
+nix flake check    # build, lint and run the VM test
+nix develop        # Rust toolchain
+nix fmt            # format
 ```
 
 When running `nix run .#vm`, you should see "Hello, world!" on the serial

@@ -24,16 +24,25 @@
         initrd = pkgs.callPackage ./nix/initrd.nix { inherit init; };
         uki = pkgs.callPackage ./nix/uki.nix { inherit init initrd; };
         vm = pkgs.callPackage ./nix/vm.nix { inherit uki; };
+        inspect = pkgs.callPackage ./nix/inspect.nix { inherit uki initrd; };
       in
       {
         packages = {
-          inherit
-            init
-            initrd
-            uki
-            vm
-            ;
+          inherit init initrd uki;
           default = uki;
+        };
+
+        apps = {
+          vm = {
+            type = "app";
+            program = pkgs.lib.getExe vm;
+            meta.description = "Boot the UKI in a VM";
+          };
+          inspect = {
+            type = "app";
+            program = pkgs.lib.getExe inspect;
+            meta.description = "List the UKI's sections and initrd contents";
+          };
         };
 
         checks = {
