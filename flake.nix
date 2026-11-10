@@ -21,11 +21,19 @@
         craneLib = crane.mkLib pkgs;
 
         init = pkgs.callPackage ./nix/init.nix { inherit craneLib; };
+        initrd = pkgs.callPackage ./nix/initrd.nix { inherit init; };
+        uki = pkgs.callPackage ./nix/uki.nix { inherit init initrd; };
+        vm = pkgs.callPackage ./nix/vm.nix { inherit uki; };
       in
       {
         packages = {
-          inherit init;
-          default = init;
+          inherit
+            init
+            initrd
+            uki
+            vm
+            ;
+          default = uki;
         };
 
         checks = {
