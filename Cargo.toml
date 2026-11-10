@@ -21,6 +21,9 @@ todo = "warn"
 missing_debug_implementations = "warn"
 unsafe_code = "deny"
 
+[dependencies]
+rustix = { version = "1", features = ["mount"] }
+
 [profile.release]
 strip = true
 lto = "thin"
