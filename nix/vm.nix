@@ -18,8 +18,17 @@ let
     mkdir -p $out/EFI/BOOT
     cp ${uki} $out/EFI/BOOT/${bootFile}
   '';
+
+  # Boot the UKI from an ESP the way firmware would, not via -kernel.
+  # snapshot=on gives OVMF a writable UEFI variable store whose changes are discarded on exit.
+  startCommand = lib.concatStringsSep " " [
+    (qemu-common.qemuBinary qemu_test)
+    "-m 512"
+    "-drive if=pflash,format=raw,readonly=on,file=${OVMF.firmware}"
+    "-drive if=pflash,format=raw,snapshot=on,file=${OVMF.variables}"
+    "-drive if=virtio,format=raw,readonly=on,file=fat:${esp}"
+  ];
 in
-# Boot the UKI from an ESP the way firmware would, not via -kernel.
 writeShellApplication {
   name = "uki-rs-vm";
   text = ''
@@ -27,14 +36,7 @@ writeShellApplication {
       set -- -serial mon:stdio
     fi
 
-    # snapshot=on gives OVMF a writable UEFI variable store whose changes are discarded on exit.
-    exec ${qemu-common.qemuBinary qemu_test} \
-      -m 512 \
-      -display none \
-      -no-reboot \
-      -drive if=pflash,format=raw,readonly=on,file=${OVMF.firmware} \
-      -drive if=pflash,format=raw,snapshot=on,file=${OVMF.variables} \
-      -drive if=virtio,format=raw,readonly=on,file=fat:${esp} \
-      "$@"
+    exec ${startCommand} -display none -no-reboot "$@"
   '';
+  passthru = { inherit startCommand; };
 }

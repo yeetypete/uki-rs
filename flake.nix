@@ -48,6 +48,8 @@
           );
 
           fmt = craneLib.cargoFmt { inherit (init.commonArgs) src; };
+
+          boot = pkgs.callPackage ./nix/tests/boot.nix { inherit vm; };
         };
 
         devShells.default = craneLib.devShell {
