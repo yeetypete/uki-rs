@@ -4,6 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     crane.url = "github:ipetkov/crane";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs =
@@ -11,22 +12,42 @@
       self,
       nixpkgs,
       crane,
+      flake-utils,
     }:
-    let
-      inherit (nixpkgs) lib;
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-      ];
-      forAllSystems = f: lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
-    in
-    {
-      devShells = forAllSystems (pkgs: {
-        default = (crane.mkLib pkgs).devShell {
+    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (
+      system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+        craneLib = crane.mkLib pkgs;
+
+        init = pkgs.callPackage ./nix/init.nix { inherit craneLib; };
+      in
+      {
+        packages = {
+          inherit init;
+          default = init;
+        };
+
+        checks = {
+          inherit init;
+
+          clippy = craneLib.cargoClippy (
+            init.commonArgs
+            // {
+              inherit (init) cargoArtifacts;
+              cargoClippyExtraArgs = "--all-targets -- --deny warnings";
+            }
+          );
+
+          fmt = craneLib.cargoFmt { inherit (init.commonArgs) src; };
+        };
+
+        devShells.default = craneLib.devShell {
+          checks = self.checks.${system};
           packages = [ pkgs.rust-analyzer ];
         };
-      });
 
-      formatter = forAllSystems (pkgs: pkgs.nixfmt-tree);
-    };
+        formatter = pkgs.nixfmt-tree;
+      }
+    );
 }
