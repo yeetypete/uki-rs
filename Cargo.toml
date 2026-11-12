@@ -7,10 +7,6 @@ license = "MIT"
 repository = "https://github.com/yeetypete/uki-rs"
 publish = false
 
-[[bin]]
-name = "init"
-path = "src/main.rs"
-
 [lints.clippy]
 dbg_macro = "warn"
 exit = "warn"
@@ -22,10 +18,11 @@ todo = "warn"
 missing_debug_implementations = "warn"
 unsafe_code = "deny"
 
-[dependencies]
-rustix = { version = "1", features = ["mount"] }
-
 [profile.release]
 strip = true
 lto = "thin"
 codegen-units = 1
+
+[dependencies]
+axum = "0.8"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }

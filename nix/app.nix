@@ -12,6 +12,6 @@ craneLib.buildPackage (
   // {
     inherit cargoArtifacts;
     passthru = { inherit commonArgs cargoArtifacts; };
-    meta.mainProgram = "init";
+    meta.mainProgram = "uki-rs";
   }
 )

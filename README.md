@@ -4,8 +4,8 @@ Run a Rust application from a single
 [UKI](https://uapi-group.org/specifications/specs/unified_kernel_image/).
 
 uki-rs uses Nix to package a Rust application together with a Linux kernel
-into a tiny ~15 MB EFI binary. The application runs as PID 1. No init system
-or Linux distribution needed!
+and systemd into a ~37 MB EFI binary. No root filesystem or Linux distribution
+needed!
 
 > [!WARNING]
 > This is an experimental "hello world" application only meant to serve as a
@@ -13,13 +13,12 @@ or Linux distribution needed!
 
 ## How it works
 
-Nix builds a UKI containing the kernel, its command line and an initramfs
-holding the application as `/init`, together with only the shared libraries it
-needs.
+Nix builds a UKI containing the kernel, its command line and a NixOS systemd
+initramfs holding the application.
 
 1. The firmware boots the UKI, which starts the kernel.
-2. The kernel unpacks the initramfs into memory and runs `/init` as PID 1.
-3. The application mounts `/dev`, `/proc` and `/sys` by itself and runs.
+2. The kernel unpacks the initramfs into memory and runs systemd as PID 1.
+3. systemd sets up the network and runs the application from the initramfs.
 
 ```txt
 uki-rs.efi
@@ -27,15 +26,16 @@ uki-rs.efi
 ├── .linux      kernel
 ├── .cmdline    kernel command line
 └── .initrd
-    ├── init -> /nix/store/…-uki-rs/bin/init
-    └── nix/store/…   glibc and other shared libraries
+    ├── init -> /nix/store/…-systemd/lib/systemd/systemd
+    ├── nix/store/…-uki-rs/bin/uki-rs
+    └── nix/store/…   systemd and shared libraries
 ```
 
 ## TODO
 
 - [x] Boot a Rust application as PID 1 from a UKI.
 - [x] VM test booting the UKI.
-- [ ] Networking.
+- [x] Networking.
 - [ ] Run a GPU workload.
 - [ ] Signed UKI for Secure Boot.
 
@@ -50,8 +50,11 @@ nix develop        # Rust toolchain
 nix fmt            # format
 ```
 
-When running `nix run .#vm`, you should see "Hello, world!" on the serial
-console.
+When running `nix run .#vm`, the server listens on port 8080:
+
+```sh
+curl http://127.0.0.1:8080  # Hello, world!
+```
 
 ## License
 
