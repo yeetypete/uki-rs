@@ -20,15 +20,26 @@
         pkgs = nixpkgs.legacyPackages.${system};
         craneLib = crane.mkLib pkgs;
 
-        init = pkgs.callPackage ./nix/init.nix { inherit craneLib; };
-        initrd = pkgs.callPackage ./nix/initrd.nix { inherit init; };
-        uki = pkgs.callPackage ./nix/uki.nix { inherit init initrd; };
-        vm = pkgs.callPackage ./nix/vm.nix { inherit uki; };
-        inspect = pkgs.callPackage ./nix/inspect.nix { inherit uki initrd; };
+        app = pkgs.callPackage ./nix/app.nix { inherit craneLib; };
+        nixos = nixpkgs.lib.nixosSystem {
+          modules = [
+            ./nix/system.nix
+            { nixpkgs.hostPlatform = system; }
+          ];
+          specialArgs = { inherit app; };
+        };
+        initrd = nixos.config.system.build.initialRamdisk;
+        uki = nixos.config.system.build.uki;
+        ukiFile = "${uki}/${nixos.config.system.boot.loader.ukiFile}";
+        vm = pkgs.callPackage ./nix/vm.nix { uki = ukiFile; };
+        inspect = pkgs.callPackage ./nix/inspect.nix {
+          inherit initrd;
+          uki = ukiFile;
+        };
       in
       {
         packages = {
-          inherit init initrd uki;
+          inherit app initrd uki;
           default = uki;
         };
 
@@ -46,17 +57,17 @@
         };
 
         checks = {
-          inherit init;
+          inherit app;
 
           clippy = craneLib.cargoClippy (
-            init.commonArgs
+            app.commonArgs
             // {
-              inherit (init) cargoArtifacts;
+              inherit (app) cargoArtifacts;
               cargoClippyExtraArgs = "--all-targets -- --deny warnings";
             }
           );
 
-          fmt = craneLib.cargoFmt { inherit (init.commonArgs) src; };
+          fmt = craneLib.cargoFmt { inherit (app.commonArgs) src; };
 
           boot = pkgs.callPackage ./nix/tests/boot.nix { inherit vm; };
         };
